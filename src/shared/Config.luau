@@ -19,6 +19,15 @@ local Config = {
 		RefillPerSecond = 1,
 	}),
 
+	Round = table.freeze({
+		IntermissionSeconds = 15,
+		RoundSeconds = 45,
+		ResultSeconds = 6,
+		-- shortcut: 1 supaya bisa dites sendirian di Studio, naikkan ke 2 sebelum publish.
+		MinPlayers = 1,
+		WinnerReward = 10, -- koin untuk tiap pemenang
+	}),
+
 	-- ID dibuat di Creator Dashboard setelah place dipublish. 0 = belum ada.
 	GamePasses = table.freeze({
 		DoubleCoins = 0, -- "2x Koin": isi setelah publish

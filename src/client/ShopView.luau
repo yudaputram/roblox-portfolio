@@ -1,5 +1,5 @@
--- Tampilan toko. Hanya menggambar state yang diberikan controller (init.client):
--- tidak membaca data pemain dan tidak memanggil remote.
+-- Tampilan HUD (koin, status ronde) dan toko. Hanya menggambar state yang diberikan
+-- controller (init.client): tidak membaca data pemain dan tidak memanggil remote.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -14,6 +14,7 @@ export type State = {
 	message: string?,
 	open: boolean,
 	keyHint: boolean,
+	round: string?, -- teks dari RoundStatus.text; nil = baris disembunyikan
 }
 
 export type RowKind = "buy" | "owned" | "disabled"
@@ -187,6 +188,10 @@ function ShopView.new(parent: Instance, handlers: Handlers)
 	local shopButton = button("ShopButton", 2, 88)
 	local hudNotice = paragraph("Notice", THEME.warning, 2)
 	hudNotice.Size = UDim2.fromOffset(280, 0)
+	-- Lebar tetap sama dengan Notice; teks panjang (seri banyak pemenang) turun ke baris baru.
+	local hudRound = paragraph("Round", THEME.text, 0)
+	hudRound.Size = UDim2.fromOffset(280, 0)
+	hudRound.TextSize = THEME.textBody
 	local hud = make("Frame", {
 		Name = "Hud",
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -199,6 +204,7 @@ function ShopView.new(parent: Instance, handlers: Handlers)
 		make("UICorner", { CornerRadius = UDim.new(0, 8) }),
 		padding(8, 12),
 		list(Enum.FillDirection.Vertical, 4),
+		hudRound,
 		make("Frame", {
 			Name = "Bar",
 			LayoutOrder = 1,
@@ -329,6 +335,7 @@ function ShopView.new(parent: Instance, handlers: Handlers)
 	self._hud = hud
 	self._hudCoins = hudCoins
 	self._hudNotice = hudNotice
+	self._hudRound = hudRound
 	self._shopButton = shopButton
 	self._panelCoins = panelCoins
 	self._panelNotice = panelNotice
@@ -347,6 +354,8 @@ function ShopView:render(state: State)
 	self._shopButton.Text = if state.keyHint then "Toko (B)" else "Toko"
 	self._hudNotice.Text = notice or ""
 	self._hudNotice.Visible = notice ~= nil
+	self._hudRound.Text = state.round or ""
+	self._hudRound.Visible = state.round ~= nil
 	self._panelNotice.Text = notice or ""
 	self._panelNotice.Visible = notice ~= nil
 	self._message.Text = state.message or ""

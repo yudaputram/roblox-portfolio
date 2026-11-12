@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local RoundStatus = require(script.RoundStatus)
 local ShopView = require(script.ShopView)
 
 local REPLY_TIMEOUT = 3 -- detik; server tidak membalas request yang kena rate limit
@@ -34,6 +35,7 @@ local state: ShopView.State = {
 	message = nil,
 	open = false,
 	keyHint = false,
+	round = nil,
 }
 local view
 local nextToken = 0
@@ -90,6 +92,25 @@ end
 
 view = ShopView.new(player:WaitForChild("PlayerGui"), { onToggle = toggle, onBuy = buy })
 render()
+
+-- Status ronde dibaca dari atribut yang ditulis server. Dicek ulang 5x per detik untuk
+-- hitung mundur; render hanya kalau teksnya berubah.
+task.spawn(function()
+	local roundState = ReplicatedStorage:WaitForChild("RoundState")
+	while true do
+		local text = RoundStatus.text({
+			phase = roundState:GetAttribute("Phase"),
+			endsAt = roundState:GetAttribute("EndsAt"),
+			winners = roundState:GetAttribute("Winners"),
+			winningScore = roundState:GetAttribute("WinningScore"),
+		}, workspace:GetServerTimeNow(), player.Name, player:GetAttribute("RoundScore") or 0)
+		if text ~= state.round then
+			state.round = text
+			render()
+		end
+		task.wait(0.2)
+	end
+end)
 
 -- BuyResult hanya mengisi pesan. Koin dan kepemilikan datang dari cermin server di bawah.
 buyResult.OnClientEvent:Connect(function(itemId: string, result: string)

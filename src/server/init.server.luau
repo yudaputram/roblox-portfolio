@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoinPickup = require(script.CoinPickup)
 local Monetization = require(script.Monetization)
 local PlayerData = require(script.PlayerData)
+local Rounds = require(script.Rounds)
 local Shop = require(script.Shop)
 local StatsMirror = require(script.StatsMirror)
 local Store = require(script.Store)
@@ -43,13 +44,22 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passI
 	monetization:onPassPurchased(player, passId, wasPurchased)
 end)
 
+-- Atribut: Phase, EndsAt, Winners, WinningScore. Diisi Rounds.new sebelum folder terlihat client.
+local roundState = Instance.new("Folder")
+roundState.Name = "RoundState"
+local rounds = Rounds.new(playerData, roundState)
+roundState.Parent = ReplicatedStorage
+
 local shop = Shop.new(playerData)
 local coinPickup = CoinPickup.new(playerData, function(player: Player)
 	return monetization:coinMultiplier(player)
+end, function(player: Player)
+	rounds:onCollected(player)
 end)
 
 shop:connect(buyItem, buyResult)
 coinPickup:start()
+rounds:start()
 playerData:startAutosave()
 game:BindToClose(function()
 	playerData:closeAll()
@@ -71,5 +81,6 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	shop:removePlayer(player)
 	coinPickup:removePlayer(player)
 	monetization:removePlayer(player)
+	rounds:removePlayer(player)
 	playerData:unload(player)
 end)

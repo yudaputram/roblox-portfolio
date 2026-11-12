@@ -8,12 +8,14 @@ local CoinPickup = {}
 CoinPickup.__index = CoinPickup
 
 -- multiplier: pengali hadiah per pemain (gamepass 2x Koin). Tanpa itu selalu 1.
-function CoinPickup.new(playerData, multiplier: ((Player) -> number)?)
+-- onCollected: dipanggil setiap pickup yang sah (skor ronde Hari 7).
+function CoinPickup.new(playerData, multiplier: ((Player) -> number)?, onCollected: ((Player) -> ())?)
 	local self = setmetatable({}, CoinPickup)
 	self._playerData = playerData
 	self._multiplier = multiplier or function()
 		return 1
 	end
+	self._onCollected = onCollected
 	self._cooling = {} :: { [Player]: boolean }
 	return self
 end
@@ -30,6 +32,10 @@ function CoinPickup:collect(player: Player): boolean
 	task.delay(Config.Coin.Cooldown, function()
 		self._cooling[player] = nil
 	end)
+	-- Paling akhir: kalau callback error, koin dan cooldown sudah tercatat.
+	if self._onCollected then
+		self._onCollected(player)
+	end
 	return true
 end
 

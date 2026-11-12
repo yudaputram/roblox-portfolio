@@ -10,7 +10,7 @@ Satu game kecil "simulator koin" yang tumbuh tiap hari. Tiap dokumen menjelaskan
 | 4 | DataStore: load, save, session lock | [hari-04.md](hari-04.md) |
 | 5 | UI toko | [hari-05.md](hari-05.md) |
 | 6 | Monetisasi: gamepass dan developer product | [hari-06.md](hari-06.md) |
-| 7 | Sistem ronde (state machine) | belum |
+| 7 | Sistem ronde (state machine) | [hari-07.md](hari-07.md) |
 | 8 | Combat: pedang dengan validasi server | belum |
 | 9 | Anti-exploit dan performa | belum |
 | 10 | Rapikan jadi portofolio | belum |
