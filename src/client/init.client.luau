@@ -10,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local RoundStatus = require(script.RoundStatus)
 local ShopView = require(script.ShopView)
+local Sword = require(script.Sword)
 
 local REPLY_TIMEOUT = 3 -- detik; server tidak membalas request yang kena rate limit
 local LOAD_TIMEOUT = 60 -- load DataStore bisa mencoba ulang beberapa kali
@@ -92,6 +93,8 @@ end
 
 view = ShopView.new(player:WaitForChild("PlayerGui"), { onToggle = toggle, onBuy = buy })
 render()
+
+Sword.start(player, remotes:WaitForChild("Attack") :: RemoteEvent)
 
 -- Status ronde dibaca dari atribut yang ditulis server. Dicek ulang 5x per detik untuk
 -- hitung mundur; render hanya kalau teksnya berubah.

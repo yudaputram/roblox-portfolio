@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CoinPickup = require(script.CoinPickup)
+local Combat = require(script.Combat)
 local Monetization = require(script.Monetization)
 local PlayerData = require(script.PlayerData)
 local Rounds = require(script.Rounds)
@@ -24,6 +25,7 @@ local remotes = Instance.new("Folder")
 remotes.Name = "Remotes"
 local buyItem = makeRemote(remotes, "BuyItem") -- client -> server: (itemId: string)
 local buyResult = makeRemote(remotes, "BuyResult") -- server -> satu client: (itemId, "Ok" | "NotEnoughCoins" | "AlreadyOwned")
+local attack = makeRemote(remotes, "Attack") -- client -> server: (target: Model?), tanpa balasan
 remotes.Parent = ReplicatedStorage
 
 local playerData = PlayerData.new({
@@ -57,9 +59,12 @@ end, function(player: Player)
 	rounds:onCollected(player)
 end)
 
+local combat = Combat.new(playerData)
+
 shop:connect(buyItem, buyResult)
 coinPickup:start()
 rounds:start()
+combat:start(attack)
 playerData:startAutosave()
 game:BindToClose(function()
 	playerData:closeAll()
@@ -67,6 +72,7 @@ end)
 
 local function onPlayerAdded(player: Player)
 	task.spawn(monetization.checkPass, monetization, player)
+	combat:addPlayer(player)
 	playerData:load(player)
 end
 
@@ -82,5 +88,6 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	coinPickup:removePlayer(player)
 	monetization:removePlayer(player)
 	rounds:removePlayer(player)
+	combat:removePlayer(player)
 	playerData:unload(player)
 end)

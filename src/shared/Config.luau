@@ -28,6 +28,16 @@ local Config = {
 		WinnerReward = 10, -- koin untuk tiap pemenang
 	}),
 
+	Combat = table.freeze({
+		Damage = 25,
+		Cooldown = 0.6, -- detik antar ayunan, per pemain
+		-- Stud antara HumanoidRootPart penyerang dan target, diukur di server. Pedang sekitar
+		-- 5 stud; sisanya kelonggaran karena target sudah bergerak saat request tiba.
+		Range = 9,
+		KillReward = 5, -- koin; tidak digandakan gamepass 2x Koin, sama seperti hadiah ronde
+		DummyRespawn = 5, -- detik setelah boneka latihan mati
+	}),
+
 	-- ID dibuat di Creator Dashboard setelah place dipublish. 0 = belum ada.
 	GamePasses = table.freeze({
 		DoubleCoins = 0, -- "2x Koin": isi setelah publish
