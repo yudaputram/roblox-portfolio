@@ -7,6 +7,7 @@ local CoinPickup = require(script.CoinPickup)
 local PlayerData = require(script.PlayerData)
 local Shop = require(script.Shop)
 local StatsMirror = require(script.StatsMirror)
+local Store = require(script.Store)
 
 -- Client hanya boleh meminta lewat remote ini; keputusannya tetap di server.
 local function makeRemote(parent: Instance, name: string): RemoteEvent
@@ -22,12 +23,23 @@ local buyItem = makeRemote(remotes, "BuyItem") -- client -> server: (itemId: str
 local buyResult = makeRemote(remotes, "BuyResult") -- server -> satu client: (itemId, "Ok" | "NotEnoughCoins" | "AlreadyOwned")
 remotes.Parent = ReplicatedStorage
 
-local playerData = PlayerData.new({ onChanged = StatsMirror.sync })
+local playerData = PlayerData.new({
+	store = Store.datastore("PlayerData"),
+	onChanged = StatsMirror.sync,
+	-- Dibaca client (UI Hari 5) untuk memberi tahu kalau progres tidak disimpan.
+	onStatus = function(player: Player, status: string)
+		player:SetAttribute("DataStatus", status)
+	end,
+})
 local shop = Shop.new(playerData)
 local coinPickup = CoinPickup.new(playerData)
 
 shop:connect(buyItem, buyResult)
 coinPickup:start()
+playerData:startAutosave()
+game:BindToClose(function()
+	playerData:closeAll()
+end)
 
 local function onPlayerAdded(player: Player)
 	playerData:load(player)
@@ -40,7 +52,8 @@ end
 
 Players.PlayerRemoving:Connect(function(player: Player)
 	-- Tiap modul yang menyimpan data per pemain wajib dibersihkan di sini.
-	playerData:unload(player)
+	-- unload terakhir karena menunggu save ke DataStore (yield).
 	shop:removePlayer(player)
 	coinPickup:removePlayer(player)
+	playerData:unload(player)
 end)
