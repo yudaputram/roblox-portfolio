@@ -5,7 +5,7 @@ Satu game kecil "simulator koin" yang tumbuh tiap hari. Tiap dokumen menjelaskan
 | Hari | Topik | Dokumen |
 |---|---|---|
 | 1 | Koin pertama, leaderstats, Touched + cooldown | [hari-01.md](hari-01.md) |
-| 2 | RemoteEvent dan toko server-authoritative | belum |
+| 2 | RemoteEvent dan toko server-authoritative | [hari-02.md](hari-02.md) |
 | 3 | ModuleScript dan OOP (refactor) | belum |
 | 4 | DataStore: load, save, session lock | belum |
 | 5 | UI toko | belum |
