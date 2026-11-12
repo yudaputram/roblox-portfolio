@@ -1,17 +1,22 @@
 -- Data pemain di memori server, disimpan ke store (DataStore asli, atau memory untuk tes).
 -- leaderstats dan folder Inventory hanya cermin, diperbarui lewat onChanged.
 --
--- Rekaman per pemain: { schema, data = { Coins, Inventory }, lock = { owner, at } }.
+-- Rekaman per pemain: { schema, data = { Coins, Inventory, Receipts }, lock = { owner, at } }.
 -- lock = session lock: hanya server pemilik lock yang boleh menulis data pemain itu.
 local HttpService = game:GetService("HttpService")
 
 local Inventory = require(script.Parent.Inventory)
 
-local SCHEMA = 1
+-- 2: tambah Receipts. Data v1 tetap terbaca (reconcile mengisi kosong), tapi server
+-- versi lama menolak menulis data v2 (TooNew), jadi Receipts tidak hilang.
+local SCHEMA = 2
 
 export type Data = {
 	Coins: number,
 	Inventory: { [string]: boolean },
+	-- PurchaseId developer product yang sudah diberikan.
+	-- shortcut: tumbuh satu entri per pembelian, pangkas yang lama kalau rekaman mendekati batas 4 MB.
+	Receipts: { [string]: boolean },
 }
 
 -- Ok = tersimpan. Selain itu sesi jalan di memori saja dan tidak pernah ditulis ke store.
@@ -40,7 +45,17 @@ local PlayerData = {}
 PlayerData.__index = PlayerData
 
 local function defaultData(): Data
-	return { Coins = 0, Inventory = {} }
+	return { Coins = 0, Inventory = {}, Receipts = {} }
+end
+
+local function copyFlags(source: any, target: { [string]: boolean })
+	if type(source) == "table" then
+		for id, flag in source do
+			if type(id) == "string" and flag == true then
+				target[id] = true
+			end
+		end
+	end
 end
 
 -- Data dari store tidak dipercaya bentuknya: ambil field yang valid, sisanya default.
@@ -50,13 +65,8 @@ local function reconcile(saved: any): Data
 		if type(saved.Coins) == "number" then
 			data.Coins = saved.Coins
 		end
-		if type(saved.Inventory) == "table" then
-			for itemId, owned in saved.Inventory do
-				if type(itemId) == "string" and owned == true then
-					data.Inventory[itemId] = true
-				end
-			end
-		end
+		copyFlags(saved.Inventory, data.Inventory)
+		copyFlags(saved.Receipts, data.Receipts)
 	end
 	return data
 end
@@ -163,7 +173,7 @@ function PlayerData:_claim(key: string): (string, any)
 				result = "Locked"
 				return nil
 			end
-			record.schema = SCHEMA
+			-- schema tidak distempel di sini: data lama baru berbentuk v2 setelah _write
 			record.lock = { owner = self._sessionId, at = self._now() }
 			result, saved = "Ok", record.data
 			return record
@@ -194,8 +204,8 @@ function PlayerData:_write(key: string, data: Data?, release: boolean): (boolean
 		owned = true
 		if data then
 			record.data = data
+			record.schema = SCHEMA
 		end
-		record.schema = SCHEMA
 		record.lock = if release then nil else { owner = self._sessionId, at = self._now() }
 		return record
 	end)
@@ -358,6 +368,22 @@ function PlayerData:purchase(player: Player, itemId: string, price: number): (bo
 	session.inventory:add(itemId)
 	self:_notify(player, session)
 	return true, "Ok"
+end
+
+-- Developer product: beri koin sekali per PurchaseId, lalu simpan.
+-- true hanya kalau pemberian itu sudah tersimpan. false = Roblox harus mengirim ulang
+-- receipt nanti; panggilan ulang dengan ID yang sama tidak memberi lagi, hanya menyimpan.
+function PlayerData:grantPurchase(player: Player, purchaseId: string, coins: number): boolean
+	local session = self._sessions[player]
+	if not session or not session.persisted then
+		return false -- belum termuat, atau sesi ini memang tidak disimpan
+	end
+	if not session.data.Receipts[purchaseId] then
+		session.data.Receipts[purchaseId] = true
+		session.data.Coins += coins
+		self:_notify(player, session)
+	end
+	return self:save(player)
 end
 
 return PlayerData

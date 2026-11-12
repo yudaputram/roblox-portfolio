@@ -18,6 +18,14 @@ local Config = {
 		BurstLimit = 5,
 		RefillPerSecond = 1,
 	}),
+
+	-- ID dibuat di Creator Dashboard setelah place dipublish. 0 = belum ada.
+	GamePasses = table.freeze({
+		DoubleCoins = 0, -- "2x Koin": isi setelah publish
+	}),
+	Products = table.freeze({
+		Coins100 = table.freeze({ Id = 0, Coins = 100 }), -- "+100 Koin": isi setelah publish
+	}),
 }
 
 return table.freeze(Config)

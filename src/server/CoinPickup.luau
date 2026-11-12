@@ -7,9 +7,13 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local CoinPickup = {}
 CoinPickup.__index = CoinPickup
 
-function CoinPickup.new(playerData)
+-- multiplier: pengali hadiah per pemain (gamepass 2x Koin). Tanpa itu selalu 1.
+function CoinPickup.new(playerData, multiplier: ((Player) -> number)?)
 	local self = setmetatable({}, CoinPickup)
 	self._playerData = playerData
+	self._multiplier = multiplier or function()
+		return 1
+	end
 	self._cooling = {} :: { [Player]: boolean }
 	return self
 end
@@ -19,7 +23,7 @@ function CoinPickup:collect(player: Player): boolean
 	if self._cooling[player] then
 		return false
 	end
-	if not self._playerData:addCoins(player, Config.Coin.Reward) then
+	if not self._playerData:addCoins(player, Config.Coin.Reward * self._multiplier(player)) then
 		return false -- data pemain belum termuat
 	end
 	self._cooling[player] = true

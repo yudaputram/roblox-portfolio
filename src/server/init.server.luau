@@ -1,9 +1,11 @@
 -- SERVER: sumber kebenaran. Script ini hanya merakit: membuat remote dan
 -- menyambungkan modul-modul di folder ini. Logikanya ada di modul.
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CoinPickup = require(script.CoinPickup)
+local Monetization = require(script.Monetization)
 local PlayerData = require(script.PlayerData)
 local Shop = require(script.Shop)
 local StatsMirror = require(script.StatsMirror)
@@ -31,8 +33,20 @@ local playerData = PlayerData.new({
 		player:SetAttribute("DataStatus", status)
 	end,
 })
+local monetization = Monetization.new(playerData)
+-- Dipasang sebelum apa pun yang bisa yield. Tanpa callback, Roblox menganggap receipt
+-- sudah diproses, dan pembelian itu tidak bisa diberikan lagi.
+MarketplaceService.ProcessReceipt = function(info)
+	return monetization:processReceipt(info)
+end
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, wasPurchased)
+	monetization:onPassPurchased(player, passId, wasPurchased)
+end)
+
 local shop = Shop.new(playerData)
-local coinPickup = CoinPickup.new(playerData)
+local coinPickup = CoinPickup.new(playerData, function(player: Player)
+	return monetization:coinMultiplier(player)
+end)
 
 shop:connect(buyItem, buyResult)
 coinPickup:start()
@@ -42,6 +56,7 @@ game:BindToClose(function()
 end)
 
 local function onPlayerAdded(player: Player)
+	task.spawn(monetization.checkPass, monetization, player)
 	playerData:load(player)
 end
 
@@ -55,5 +70,6 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	-- unload terakhir karena menunggu save ke DataStore (yield).
 	shop:removePlayer(player)
 	coinPickup:removePlayer(player)
+	monetization:removePlayer(player)
 	playerData:unload(player)
 end)
