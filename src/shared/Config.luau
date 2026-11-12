@@ -8,6 +8,11 @@ local Config = {
 		GoldCrown = table.freeze({ Name = "Mahkota Emas", Price = 50, Order = 3 }),
 	}),
 
+	Coin = table.freeze({
+		Reward = 1,
+		Cooldown = 1, -- detik, per pemain
+	}),
+
 	Shop = table.freeze({
 		-- Token bucket per pemain: boleh beruntun 5 request, lalu 1 request per detik.
 		BurstLimit = 5,
