@@ -13,7 +13,7 @@ Satu game kecil "simulator koin" yang tumbuh tiap hari. Tiap dokumen menjelaskan
 | 7 | Sistem ronde (state machine) | [hari-07.md](hari-07.md) |
 | 8 | Combat: pedang dengan validasi server | [hari-08.md](hari-08.md) |
 | 9 | Anti-exploit dan performa | [hari-09.md](hari-09.md), [keamanan-checklist.md](keamanan-checklist.md) |
-| 10 | Rapikan jadi portofolio | belum |
+| 10 | Koin respawn, regresi semua hari, portofolio | [hari-10.md](hari-10.md), [rekam-demo.md](rekam-demo.md) |
 
 ## Cara pakai
 

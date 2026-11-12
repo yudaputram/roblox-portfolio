@@ -50,7 +50,7 @@ Ini aturan terpenting hari ini. Kalau load gagal lalu kode menganggap "pemain ba
 
 Statusnya ditaruh di atribut pemain `DataStatus` (`Ok`, `Offline`, `Locked`, `Error`) supaya UI Hari 5 bisa memberi tahu pemain.
 
-Ada harga yang dibayar. Pemain dengan sesi `Locked` atau `Error` melihat 0 koin dan progres sesi itu hilang saat keluar. `Locked` bisa terjadi kalau server lama butuh lebih dari 7 detik (1+2+4) untuk menyimpan dan melepas lock saat pemain pindah server. Banyak game memilih menendang pemain dengan pesan "coba masuk lagi" daripada membiarkannya bermain tanpa simpan. Kurikulum ini memilih tidak menendang supaya game tetap bisa dicoba di place yang belum dipublish, dan UI Hari 5 yang memberi tahu pemain.
+Ada harga yang dibayar. Pemain dengan sesi `Locked` atau `Error` melihat 0 koin dan progres sesi itu hilang saat keluar. `Locked` bisa terjadi kalau server lama butuh lebih dari 7 detik (1+2+4) untuk menyimpan dan melepas lock saat pemain pindah server. Banyak game memilih menendang pemain dengan pesan "coba masuk lagi" daripada membiarkannya bermain tanpa simpan. Kurikulum ini tidak menendang karena aturannya untuk DataStore yang gagal adalah "jangan crash, jangan kick pemain". Yang memberi tahu pemain adalah UI Hari 5.
 
 ### Kapan menyimpan
 

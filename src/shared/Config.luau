@@ -11,6 +11,7 @@ local Config = {
 	Coin = table.freeze({
 		Reward = 1,
 		Cooldown = 1, -- detik, per pemain, berlaku untuk semua koin sekaligus
+		RespawnSeconds = 8, -- koin yang diambil muncul lagi setelah ini
 		-- Satu part bertag "Koin" per posisi. Jauh dari titik spawn dan boneka latihan.
 		Positions = table.freeze({
 			Vector3.new(0, 3, 10),

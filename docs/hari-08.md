@@ -48,7 +48,7 @@ Tag dipasang server. Tag yang ditambahkan client tidak tersalin ke server, jadi 
 
 Angka 9 stud diukur di server, dari `Position` HumanoidRootPart kedua karakter. Pedang sekitar 5 stud; sisanya kelonggaran karena target sudah bergerak sedikit saat request sampai.
 
-Tapi posisi karakter pemain dimiliki client (network ownership). Client mengirim posisinya, server menyalinnya. Exploiter yang memindahkan karakternya ke samping target lalu menunggu sebentar akan lolos cek jarak (tes live 10). Cek jarak menghentikan serangan dari jauh tanpa bergerak; ia tidak menghentikan teleport. Repo ini belum memeriksa gerakan karakter di server; itu kandidat Hari 9.
+Tapi posisi karakter pemain dimiliki client (network ownership). Client mengirim posisinya, server menyalinnya. Exploiter yang memindahkan karakternya ke samping target lalu menunggu sebentar akan lolos cek jarak (tes live 10). Cek jarak menghentikan serangan dari jauh tanpa bergerak; ia tidak menghentikan teleport. Repo ini belum memeriksa gerakan karakter di server. Hari 9 memutuskan belum membuatnya; alasannya ada di bagian "Validasi gerak: sengaja belum dibuat" di [hari-09.md](hari-09.md).
 
 ### Hadiah kill dibayar tepat sekali
 
@@ -182,7 +182,7 @@ Client memilih model hidup terdekat dalam 9 stud dan mengirimnya. Ini hanya usul
 - Referensi karakter lama setelah respawn. Model lama sudah tidak di Workspace dan bukan karakter pemain mana pun, jadi ditolak `BadTarget` (tes respawn).
 - `toolanim` menumpuk di server kalau tidak dihapus.
 - Klik tombol toko saat pedang dipegang. Diukur: klik pada GUI tidak memicu `Activated`, jadi pedang tidak perlu dimatikan saat toko terbuka (tes live 11).
-- Celah yang masih ada: teleport. Posisi penyerang dimiliki client, jadi exploiter bisa pindah ke samping target lalu menyerang (tes live 10). Celah yang sama dengan pickup koin di Hari 7. Belum ditutup; cek kecepatan gerak karakter di server adalah kandidat Hari 9.
+- Celah yang masih ada: teleport. Posisi penyerang dimiliki client, jadi exploiter bisa pindah ke samping target lalu menyerang (tes live 10). Celah yang sama dengan pickup koin di Hari 7. Belum ditutup; Hari 9 memutuskan cek kecepatan gerak di server belum dibuat (lihat [hari-09.md](hari-09.md)).
 - Celah yang masih ada: arah dan halangan. Server tidak mengecek arah hadap atau dinding di antara penyerang dan target. Latihan 1 menambahkan cek arah.
 - Farming boneka. Satu kill butuh 4 pukulan, pada detik 0; 0,6; 1,2; dan 1,8. Boneka hidup lagi 5 detik setelah mati, jadi hasilnya 5 koin per 6,8 detik, sekitar 0,74 koin per detik. Pickup koin memberi paling banyak 1 koin per detik (cooldown 1 detik), atau 2 dengan gamepass 2x Koin. Boneka tidak lebih menguntungkan dari koin.
 - Dua pemain bisa saling bunuh bergantian untuk koin. Belum dibatasi.
@@ -255,7 +255,7 @@ Server memasang koneksi kedua ke `Attack.OnServerEvent` yang mencatat setiap req
 11. Klik GUI dengan pedang dipegang (`user_mouse_input` di datamodel Client). Kontrol: klik di area 3D sebelum tes menaikkan hitungan `Activated` jadi 1. Klik tombol Toko membuka panel; klik judul panel, tombol Mahkota Emas yang nonaktif (koin kurang), dan area kosong panel; lalu klik Tutup. Hitungan tetap 1. Klik area 3D setelahnya: 2.
 12. Output: hanya peringatan DataStore yang sudah dikenal dan noise `ContentId` lama. Tidak ada error dari `Combat` atau `Sword`.
 
-Di sesi yang sama, perakit lama tetap jalan: pickup koin +1 (tes 8), HUD ronde dan panel toko buka-tutup (tes 11). Di antara dua pengukuran koin naik dari 6 ke 16, sama dengan hadiah ronde 10, dan `Winners` saat itu berisi nama akun pemain; momen pembayarannya sendiri tidak dicatat. Modul hari sebelumnya tidak diubah hari ini, jadi suite unitnya tidak dijalankan ulang; regresi menyeluruh dijadwalkan di Hari 10.
+Di sesi yang sama, perakit lama tetap jalan: pickup koin +1 (tes 8), HUD ronde dan panel toko buka-tutup (tes 11). Di antara dua pengukuran koin naik dari 6 ke 16, sama dengan hadiah ronde 10, dan `Winners` saat itu berisi nama akun pemain; momen pembayarannya sendiri tidak dicatat. Modul hari sebelumnya tidak diubah hari ini, jadi suite unitnya tidak dijalankan ulang; regresi menyeluruh dijalankan di Hari 10 ([hari-10.md](hari-10.md)).
 
 ### Yang belum bisa dites live
 

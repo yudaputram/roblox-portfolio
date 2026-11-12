@@ -64,7 +64,7 @@ Tabel yang key-nya objek `Player` menahan objek itu di memori. Pemain keluar, en
 
 ## 4. Jebakan umum
 
-- Koin bisa di-farm. Koin tidak pernah hilang, jadi pemain yang jalan bolak-balik menembus koin dapat sekitar 1 koin per detik (dibatasi cooldown). Di tes, cara ini memberi +8 dalam 10 detik. Catatan awal kurikulum menyebut koin juga naik tiap detik selama pemain berdiri di dalam part. Di tes MCP (jalan masuk lalu diam 15 detik) itu tidak terulang: koin hanya naik sekali. Bisa jadi berbeda kalau karakter bergerak sedikit (misalnya animasi atau kamera), jadi coba sendiri di Studio. Perbaikannya sama untuk kedua kasus, di Hari 10: koin hilang setelah diambil lalu muncul lagi.
+- Koin bisa di-farm. Koin tidak pernah hilang, jadi pemain yang jalan bolak-balik menembus koin dapat sekitar 1 koin per detik (dibatasi cooldown). Di tes, cara ini memberi +8 dalam 10 detik. Catatan awal kurikulum menyebut koin juga naik tiap detik selama pemain berdiri di dalam part. Di tes MCP hari ini (jalan masuk lalu diam 15 detik) itu tidak terulang: koin hanya naik sekali. Di Hari 9 (tes live L1) itu terulang: berdiri di dalam koin memberi pickup kira-kira tiap 3,8 detik. Diperbaiki di Hari 10: koin hilang setelah diambil lalu muncul lagi 8 detik kemudian. Pemain yang berdiri di dalam koin kini dibayar sekali tiap koin muncul, dan farm 10 detik yang sama memberi +2, bukan +8. Lihat [hari-10.md](hari-10.md).
 - Mengubah nilai dari LocalScript. Pemula sering menulis `coins.Value += 1` di LocalScript. Di layar sendiri angkanya naik, tapi server dan pemain lain tidak melihatnya. Tes negatif di bawah membuktikannya.
 - Memakai `wait()`, `spawn()`, `delay()` versi lama. Pakai `task.wait`, `task.spawn`, `task.delay`.
 
@@ -81,7 +81,7 @@ Semua langkah dijalankan lewat MCP `Roblox_Studio`. Sinkron Rojo dicek dulu: `Ba
 5. Output tidak berisi error dari script kita. Baris `ContentId: rbxassetid://203785492 failed ...` sudah muncul sebelum kode kita jalan (dari place/Studio).
 6. Gate statis: `selene src` 0 error 0 warning, `stylua --check src` lolos.
 
-Catatan jujur: satu tes awal (karakter diteleport server ke dalam koin dengan `WalkSpeed = 0`) sempat mencatat 0 jadi 2 dalam 3,5 detik. Penyebab kenaikan kedua belum terbukti dan tidak terulang di tes 4.
+Catatan: satu tes awal (karakter diteleport server ke dalam koin dengan `WalkSpeed = 0`) sempat mencatat 0 jadi 2 dalam 3,5 detik. Penyebab kenaikan kedua belum terbukti dan tidak terulang di tes 4.
 
 ## 6. Latihan mandiri
 

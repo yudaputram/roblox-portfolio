@@ -1,5 +1,6 @@
 -- Koin di dunia. Sentuh = tambah Coins lewat PlayerData, dengan cooldown per pemain.
 -- Setiap BasePart bertag "Koin" adalah koin, termasuk yang ditambah setelah server jalan.
+-- Koin yang diambil disembunyikan, lalu muncul lagi setelah Config.Coin.RespawnSeconds.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +24,8 @@ function CoinPickup.new(playerData, multiplier: ((Player) -> number)?, onCollect
 	self._onCollected = onCollected
 	self._cooling = {} :: { [Player]: boolean }
 	self._touched = {} :: { [Instance]: RBXScriptConnection }
+	-- Koin yang sedang tersembunyi -> Transparency aslinya. Ini yang dicek server, bukan CanTouch.
+	self._hidden = {} :: { [BasePart]: { transparency: number } }
 	return self
 end
 
@@ -45,6 +48,39 @@ function CoinPickup:collect(player: Player): boolean
 	return true
 end
 
+-- Pemain mengambil koin ini. Koin hanya hilang kalau pickup sah, jadi pemain yang masih
+-- cooldown tidak menghabiskan koin untuk pemain lain.
+function CoinPickup:take(part: BasePart, player: Player): boolean
+	if self._hidden[part] or not self:collect(player) then
+		return false
+	end
+	self:hide(part)
+	return true
+end
+
+-- shortcut: hanya part ini yang disembunyikan; Decal atau efek di dalamnya tetap terlihat.
+-- Kalau builder memakai koin berhias, sembunyikan anak-anaknya juga.
+function CoinPickup:hide(part: BasePart)
+	local hidden = { transparency = part.Transparency }
+	self._hidden[part] = hidden
+	part.Transparency = 1
+	part.CanTouch = false -- client berhenti melaporkan sentuhan; keputusan tetap dari _hidden
+	task.delay(Config.Coin.RespawnSeconds, function()
+		if self._hidden[part] == hidden then -- bukan jadwal sisa dari pengambilan sebelumnya
+			self:show(part)
+		end
+	end)
+end
+
+function CoinPickup:show(part: BasePart)
+	local hidden = self._hidden[part]
+	if hidden then
+		self._hidden[part] = nil
+		part.Transparency = hidden.transparency
+		part.CanTouch = true
+	end
+end
+
 -- Satu koneksi Touched per koin, disimpan supaya bisa diputus saat koin dilepas.
 function CoinPickup:bind(part: Instance)
 	if not part:IsA("BasePart") or self._touched[part] then
@@ -54,7 +90,7 @@ function CoinPickup:bind(part: Instance)
 		-- Touched terpicu untuk tiap bagian tubuh. Cari pemilik karakternya.
 		local player = Players:GetPlayerFromCharacter(hit.Parent)
 		if player then
-			self:collect(player)
+			self:take(part, player)
 		end
 	end)
 end
@@ -65,6 +101,7 @@ function CoinPickup:unbind(part: Instance)
 	if connection then
 		connection:Disconnect()
 		self._touched[part] = nil
+		self:show(part :: BasePart) -- part yang bukan koin lagi dikembalikan seperti semula
 	end
 end
 

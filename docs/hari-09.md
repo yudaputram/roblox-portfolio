@@ -75,7 +75,7 @@ Sebelumnya `CoinPickup:start` membuat satu Part di (0, 3, 10) dan menghubungkan 
 Sekarang setiap BasePart bertag `Koin` adalah koin:
 
 - `GetTagged("Koin")` untuk yang sudah ada saat server mulai, termasuk Part yang ditandai builder di Studio lewat Tag Editor.
-- `GetInstanceAddedSignal("Koin")` untuk yang ditambahkan belakangan, misalnya koin yang muncul lagi di Hari 10.
+- `GetInstanceAddedSignal("Koin")` untuk yang ditambahkan belakangan, misalnya koin yang dipasang skrip lain saat server sudah jalan (tes live L4). Koin yang muncul lagi di Hari 10 tidak lewat sinyal ini, karena tagnya tidak pernah dilepas.
 - `GetInstanceRemovedSignal("Koin")` untuk melepas koneksi saat koin tidak lagi menjadi koin.
 
 Sinyal removed menyala pada tiga kejadian: `Destroy`, `RemoveTag`, dan `Parent = nil` (K4). Yang paling penting adalah `RemoveTag`. Part masih ada, jadi koneksi `Touched` lamanya tetap hidup dan tetap membayar kalau tidak diputus (mutan N4, tes live L2).
