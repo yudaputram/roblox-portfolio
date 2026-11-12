@@ -48,8 +48,13 @@ function Sword.start(player: Player, attack: RemoteEvent)
 			end)
 		end
 	end
+	-- Karakter lama tidak di-Destroy saat respawn (diukur Hari 9), jadi koneksinya diputus sendiri.
+	local childAdded: RBXScriptConnection? = nil
 	local function onCharacter(character: Model)
-		character.ChildAdded:Connect(hook) -- Tool pindah ke karakter saat dipegang
+		if childAdded then
+			childAdded:Disconnect()
+		end
+		childAdded = character.ChildAdded:Connect(hook) -- Tool pindah ke karakter saat dipegang
 		for _, child in character:GetChildren() do
 			hook(child)
 		end

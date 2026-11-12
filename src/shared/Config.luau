@@ -10,7 +10,15 @@ local Config = {
 
 	Coin = table.freeze({
 		Reward = 1,
-		Cooldown = 1, -- detik, per pemain
+		Cooldown = 1, -- detik, per pemain, berlaku untuk semua koin sekaligus
+		-- Satu part bertag "Koin" per posisi. Jauh dari titik spawn dan boneka latihan.
+		Positions = table.freeze({
+			Vector3.new(0, 3, 10),
+			Vector3.new(20, 3, 10),
+			Vector3.new(-20, 3, 10),
+			Vector3.new(20, 3, 30),
+			Vector3.new(-20, 3, 30),
+		}),
 	}),
 
 	Shop = table.freeze({
@@ -36,6 +44,9 @@ local Config = {
 		Range = 9,
 		KillReward = 5, -- koin; tidak digandakan gamepass 2x Koin, sama seperti hadiah ronde
 		DummyRespawn = 5, -- detik setelah boneka latihan mati
+		-- Batas request Attack per pemain, di atas laju klik pemain jujur (cooldown 0,6 detik).
+		RequestBurst = 10,
+		RequestsPerSecond = 5,
 	}),
 
 	-- ID dibuat di Creator Dashboard setelah place dipublish. 0 = belum ada.

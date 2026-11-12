@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local RateLimit = require(script.Parent.RateLimit)
 
 local SWORD = "Pedang"
 local DUMMY_TAG = "CombatDummy"
@@ -21,6 +22,7 @@ function Combat.new(playerData)
 	self._playerData = playerData
 	self._lastSwing = {} :: { [Player]: number }
 	self._characterAdded = {} :: { [Player]: RBXScriptConnection }
+	self._requests = RateLimit.new(Config.Combat.RequestBurst, Config.Combat.RequestsPerSecond)
 	return self
 end
 
@@ -134,6 +136,7 @@ end
 
 function Combat:removePlayer(player: Player)
 	self._lastSwing[player] = nil
+	self._requests:removePlayer(player)
 	local connection = self._characterAdded[player]
 	if connection then
 		connection:Disconnect()
@@ -174,9 +177,18 @@ local function spawnDummy()
 	end)
 end
 
+-- Pintu remote: banjir request dibuang sebelum validasi apa pun. Cooldown di attack tetap
+-- aturan ayunannya; batas ini hanya melindungi server dari request yang tidak perlu.
+function Combat:request(player: Player, target: unknown, now: number): (boolean, string)
+	if not self._requests:allow(player, now) then
+		return false, "RateLimited"
+	end
+	return self:attack(player, target, now)
+end
+
 function Combat:start(attack: RemoteEvent)
 	attack.OnServerEvent:Connect(function(player: Player, target: unknown)
-		self:attack(player, target, os.clock())
+		self:request(player, target, os.clock())
 	end)
 	spawnDummy()
 end
