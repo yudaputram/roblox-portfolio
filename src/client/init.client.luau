@@ -1,49 +1,148 @@
--- CLIENT: hanya menampilkan dan meminta. Tidak mengubah Coins, itu urusan server.
+-- CLIENT: menampilkan cermin data dari server dan mengirim permintaan beli.
+-- Tidak pernah mengubah Coins atau Inventory; keputusan tetap di server.
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local ShopView = require(script.ShopView)
+
+local REPLY_TIMEOUT = 3 -- detik; server tidak membalas request yang kena rate limit
+local LOAD_TIMEOUT = 60 -- load DataStore bisa mencoba ulang beberapa kali
+
+local MESSAGES = {
+	Ok = "%s dibeli.",
+	NotEnoughCoins = "Koin belum cukup untuk %s.",
+	AlreadyOwned = "%s sudah kamu miliki.",
+}
 
 local player = Players.LocalPlayer
-
--- WaitForChild: leaderstats dan Remotes dibuat server, bisa belum sampai saat script ini mulai
-local coins = player:WaitForChild("leaderstats"):WaitForChild("Coins") :: IntValue
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 local buyItem = remotes:WaitForChild("BuyItem") :: RemoteEvent
 local buyResult = remotes:WaitForChild("BuyResult") :: RemoteEvent
 
-coins:GetPropertyChangedSignal("Value"):Connect(function()
-	print("Koin kamu: " .. coins.Value)
-end)
+local state: ShopView.State = {
+	loaded = false,
+	failed = false,
+	coins = 0,
+	owned = {},
+	pending = {},
+	status = player:GetAttribute("DataStatus"),
+	message = nil,
+	open = false,
+	keyHint = false,
+}
+local view
+local nextToken = 0
 
--- Kontrol sementara sampai UI toko ada di Hari 5. Bukan 1/2/3 karena itu slot hotbar Tool.
-local KEYS = { Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L }
-local itemIdByKey: { [Enum.KeyCode]: string } = {}
-for itemId, item in Config.Items do
-	local key = KEYS[item.Order]
-	if key then
-		itemIdByKey[key] = itemId
+local function usesDirectionalFocus(): boolean
+	local preferred = UserInputService.PreferredInput
+	return preferred == Enum.PreferredInput.Gamepad or preferred == Enum.PreferredInput.MicroGamepad
+end
+
+local function render()
+	view:render(state)
+	-- Tombol yang sedang dipilih gamepad bisa berubah jadi nonaktif (mis. "Dimiliki").
+	local selected = GuiService.SelectedObject
+	if state.open and selected and selected:IsDescendantOf(view.panel) and not selected.Selectable then
+		GuiService.SelectedObject = view:focusTarget()
 	end
 end
 
-UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
-	if gameProcessed then
-		return -- tombol sedang dipakai UI lain, misalnya mengetik di chat
+local function toggle()
+	state.open = not state.open
+	render()
+	if state.open then
+		task.spawn(function()
+			RunService.RenderStepped:Wait() -- target harus sudah tergambar supaya bisa dipilih
+			if state.open and usesDirectionalFocus() then
+				GuiService.SelectedObject = view:focusTarget()
+			end
+		end)
+	elseif GuiService.SelectedObject and GuiService.SelectedObject:IsDescendantOf(view.panel) then
+		GuiService.SelectedObject = nil
 	end
-	local itemId = itemIdByKey[input.KeyCode]
-	if itemId then
-		buyItem:FireServer(itemId)
+end
+
+local function buy(itemId: string)
+	local _, kind = ShopView.rowState(itemId, state)
+	if kind ~= "buy" then
+		return -- tombol nonaktif: jangan kirim apa pun walau event tetap terpicu
 	end
-end)
+	nextToken += 1
+	local token = nextToken
+	state.pending[itemId] = token
+	state.message = nil
+	render()
+	buyItem:FireServer(itemId)
+	task.delay(REPLY_TIMEOUT, function()
+		-- Token beda berarti balasan sudah datang atau ada request yang lebih baru.
+		if state.pending[itemId] == token then
+			state.pending[itemId] = nil
+			state.message = "Server tidak membalas. Coba lagi."
+			render()
+		end
+	end)
+end
 
-local MESSAGES = {
-	Ok = "Berhasil membeli",
-	NotEnoughCoins = "Koin belum cukup untuk",
-	AlreadyOwned = "Sudah punya",
-}
+view = ShopView.new(player:WaitForChild("PlayerGui"), { onToggle = toggle, onBuy = buy })
+render()
 
+-- BuyResult hanya mengisi pesan. Koin dan kepemilikan datang dari cermin server di bawah.
 buyResult.OnClientEvent:Connect(function(itemId: string, result: string)
 	local item = Config.Items[itemId]
-	print(`{MESSAGES[result] or result} {if item then item.Name else itemId}`)
+	state.pending[itemId] = nil
+	state.message = string.format(MESSAGES[result] or "%s: " .. tostring(result), if item then item.Name else itemId)
+	render()
 end)
+
+player:GetAttributeChangedSignal("DataStatus"):Connect(function()
+	state.status = player:GetAttribute("DataStatus")
+	render()
+end)
+
+local function updateKeyHint()
+	state.keyHint = UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
+	render()
+end
+UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(updateKeyHint)
+updateKeyHint()
+
+-- B di keyboard, Y di gamepad. ContextActionService tidak memicu aksi saat pemain mengetik di chat.
+ContextActionService:BindAction("ToggleShop", function(_, inputState)
+	if inputState == Enum.UserInputState.Begin then
+		toggle()
+	end
+	return Enum.ContextActionResult.Sink
+end, false, Enum.KeyCode.B, Enum.KeyCode.ButtonY)
+
+-- Cermin dibuat server setelah data dimuat (bisa beberapa detik kalau DataStore lambat).
+local stats = player:WaitForChild("leaderstats", LOAD_TIMEOUT)
+local coins = stats and stats:WaitForChild("Coins", LOAD_TIMEOUT) :: IntValue?
+local inventory = coins and player:WaitForChild("Inventory", LOAD_TIMEOUT)
+if not (coins and inventory) then
+	state.failed = true
+	render()
+	return
+end
+
+local function onOwned(child: Instance)
+	state.owned[child.Name] = true
+	state.pending[child.Name] = nil
+	render()
+end
+for _, child in inventory:GetChildren() do
+	state.owned[child.Name] = true
+end
+inventory.ChildAdded:Connect(onOwned)
+
+coins:GetPropertyChangedSignal("Value"):Connect(function()
+	state.coins = coins.Value
+	render()
+end)
+state.coins = coins.Value
+state.loaded = true
+render()
